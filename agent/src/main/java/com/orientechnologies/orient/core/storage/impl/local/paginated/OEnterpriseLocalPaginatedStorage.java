@@ -1135,7 +1135,8 @@ public class OEnterpriseLocalPaginatedStorage extends OLocalPaginatedStorage {
         final OLogSequenceNumber beginLsn = restoreLog.begin();
         restoreFrom(restoreLog, beginLsn);
       }
-
+      restoreLog.close();
+      
       if (maxLsn != null && writeAheadLog != null) {
         writeAheadLog.moveLsnAfter(maxLsn);
       }
