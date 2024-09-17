@@ -996,37 +996,38 @@ public class OEnterpriseLocalPaginatedStorage extends OLocalPaginatedStorage {
 
       entryLoop:
       while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-        if (zipEntry.getName().equals(IV_NAME)) {
+        String zipPath = zipEntry.getName();
+        String fileName = checkAndCleanPath(zipPath).toString();
+        if (fileName.equals(IV_NAME)) {
           walIv = restoreIv(zipInputStream);
           continue;
         }
 
-        if (zipEntry.getName().equals(ENCRYPTION_IV)) {
+        if (fileName.equals(ENCRYPTION_IV)) {
           encryptionIv = restoreEncryptionIv(zipInputStream);
           continue;
         }
 
-        if (zipEntry.getName().equals(CONF_ENTRY_NAME)) {
+        if (fileName.equals(CONF_ENTRY_NAME)) {
           replaceConfiguration(zipInputStream);
 
           continue;
         }
 
-        if (zipEntry.getName().equalsIgnoreCase("database_instance.uuid")) {
+        if (fileName.equalsIgnoreCase("database_instance.uuid")) {
           continue;
         }
 
-        if (zipEntry.getName().equals(CONF_UTF_8_ENTRY_NAME)) {
+        if (fileName.equals(CONF_UTF_8_ENTRY_NAME)) {
           replaceConfiguration(zipInputStream);
 
           continue;
         }
 
-        if (zipEntry
-            .getName()
+        if (fileName
             .toLowerCase(serverLocale)
             .endsWith(CASDiskWriteAheadLog.WAL_SEGMENT_EXTENSION)) {
-          final String walName = zipEntry.getName();
+          final String walName = fileName;
           final int segmentIndex =
               walName.lastIndexOf(
                   ".", walName.length() - CASDiskWriteAheadLog.WAL_SEGMENT_EXTENSION.length() - 1);
@@ -1051,10 +1052,10 @@ public class OEnterpriseLocalPaginatedStorage extends OLocalPaginatedStorage {
         final long expectedFileId = OLongSerializer.INSTANCE.deserialize(binaryFileId, 0);
         long fileId;
 
-        if (!writeCache.exists(zipEntry.getName())) {
-          fileId = readCache.addFile(zipEntry.getName(), expectedFileId, writeCache);
+        if (!writeCache.exists(fileName)) {
+          fileId = readCache.addFile(fileName, expectedFileId, writeCache);
         } else {
-          fileId = writeCache.fileIdByName(zipEntry.getName());
+          fileId = writeCache.fileIdByName(fileName);
         }
 
         if (!writeCache.fileIdsAreEqual(expectedFileId, fileId))
@@ -1070,10 +1071,9 @@ public class OEnterpriseLocalPaginatedStorage extends OLocalPaginatedStorage {
             final int b = zipInputStream.read(data, rb, data.length - rb);
 
             if (b == -1) {
-              if (rb > 0)
-                throw new OStorageException("Can not read data from file " + zipEntry.getName());
+              if (rb > 0) throw new OStorageException("Can not read data from file " + fileName);
               else {
-                processedFiles.add(zipEntry.getName());
+                processedFiles.add(fileName);
                 continue entryLoop;
               }
             }
@@ -1282,5 +1282,17 @@ public class OEnterpriseLocalPaginatedStorage extends OLocalPaginatedStorage {
   @Override
   protected void checkBackupRunning() {
     waitBackup();
+  }
+
+  private Path checkAndCleanPath(String zipPath) {
+    Path rootDirectory = getStoragePath().normalize();
+    Path zipEntryPath = rootDirectory.resolve(zipPath).normalize();
+    if (!zipEntryPath.startsWith(rootDirectory)) {
+      throw new IllegalStateException("Bad zip entry " + zipPath);
+    }
+    if (!zipEntryPath.getParent().equals(rootDirectory)) {
+      throw new IllegalStateException("Bad zip entry " + zipPath);
+    }
+    return zipEntryPath.getFileName();
   }
 }
