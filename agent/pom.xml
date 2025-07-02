@@ -9,7 +9,38 @@
     </parent>
     <artifactId>agent</artifactId>
     <packaging>jar</packaging>
+    <name>OrientDB Agent</name>
+    <description> OrientDB Enterprise Agent </description>
+    <url>https://orientdb.dev</url>
+    <organization>
+        <name>OrientDB</name>
+        <url>https://orientdb.dev</url>
+    </organization>
+    <licenses>
+        <license>
+            <name>Apache 2</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
 
+    <developers>
+        <developer>
+            <id>tglman</id>
+            <name>Tglman</name>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:orientechnologies/enterprise-agent.git</connection>
+        <developerConnection>scm:git:git@github.com:orientechnologies/enterprise-agent.git</developerConnection>
+        <url>scm:git:git@github.com:orientechnologies/enterprise-agent.git</url>
+        <tag>HEAD</tag>
+    </scm>
     <properties>
         <surefire.version>2.19.1</surefire.version>
         <metrics.version>4.2.17</metrics.version>
@@ -17,7 +48,6 @@
         <project.rootdir>${project.basedir}/../</project.rootdir>
     </properties>
 
-    <name>agent</name>
     <build>
         <resources>
             <resource>
