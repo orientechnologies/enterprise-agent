@@ -32,6 +32,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.server.handler.OAutomaticBackup;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Calendar;
 import java.util.Date;
@@ -86,8 +87,15 @@ public abstract class OBackupStrategy {
           new OBackupErrorLog(
               start.getUnitId(), start.getTxId(), getUUID(), getDbName(), getMode().toString());
       final StringWriter sw = new StringWriter();
+      e.printStackTrace(new PrintWriter(sw));
       error.setMessage(e.getMessage());
       error.setStackTrace(sw.toString());
+
+      // Add retry count if listener is OBackupTask
+      if (listener instanceof OBackupTask) {
+        error.setRetryCount(((OBackupTask) listener).getCurrentRetryCount());
+      }
+
       logger.log(error);
       listener.onEvent(cfg, error);
       return;
@@ -319,6 +327,15 @@ public abstract class OBackupStrategy {
 
   public Integer getRetentionDays() {
     return cfg.field(OBackupConfig.RETENTION_DAYS);
+  }
+
+  public Integer getRetries() {
+    return cfg.field(OBackupConfig.RETRIES);
+  }
+
+  public int getRetriesWithDefault() {
+    Integer retries = getRetries();
+    return (retries != null && retries >= 0) ? retries : 3;
   }
 
   protected OBackupScheduledLog lastUnfiredSchedule() {

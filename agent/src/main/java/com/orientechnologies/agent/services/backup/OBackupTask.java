@@ -35,6 +35,7 @@ public class OBackupTask implements OBackupListener {
   private TimerTask task;
   private OBackupListener listener;
   private OEnterpriseServer server;
+  private int currentRetryCount = 0;
 
   public OBackupTask(OBackupStrategy strategy, OEnterpriseServer server) {
     this.strategy = strategy;
@@ -93,6 +94,27 @@ public class OBackupTask implements OBackupListener {
     return strategy;
   }
 
+  public int getCurrentRetryCount() {
+    return currentRetryCount;
+  }
+
+  private void resetRetryCount() {
+    this.currentRetryCount = 0;
+  }
+
+  private long calculateBackoffDelay() {
+    switch (currentRetryCount) {
+      case 0:
+        return 60 * 1000L; // 1 minute
+      case 1:
+        return 5 * 60 * 1000L; // 5 minutes
+      case 2:
+        return 15 * 60 * 1000L; // 15 minutes
+      default:
+        return 30 * 60 * 1000L; // 30 minutes
+    }
+  }
+
   public void changeConfig(final OBackupConfig config, final ODocument doc) {
     if (task != null) {
       task.cancel();
@@ -110,12 +132,64 @@ public class OBackupTask implements OBackupListener {
   @Override
   public Boolean onEvent(final ODocument cfg, final OBackupLog log) {
     final boolean canContinue = invokeListener(cfg, log);
-    if (OBackupLogType.BACKUP_FINISHED.equals(log.getType())
-        || OBackupLogType.BACKUP_ERROR.equals(log.getType())) {
+
+    if (OBackupLogType.BACKUP_FINISHED.equals(log.getType())) {
+      resetRetryCount();
       if (canContinue) {
         schedule();
       }
+    } else if (OBackupLogType.BACKUP_ERROR.equals(log.getType())) {
+      final int maxRetries = strategy.getRetriesWithDefault();
+
+      if (currentRetryCount < maxRetries) {
+        final long delay = calculateBackoffDelay();
+        currentRetryCount++;
+
+        OLogManager.instance()
+            .warn(
+                this,
+                "Backup failed for ["
+                    + strategy.getDbName()
+                    + "]. Retry attempt "
+                    + currentRetryCount
+                    + "/"
+                    + maxRetries
+                    + " scheduled in "
+                    + (delay / 1000)
+                    + " seconds");
+
+        task =
+            Orient.instance()
+                .scheduleTask(
+                    () -> {
+                      server
+                          .getDatabases()
+                          .execute(
+                              () -> {
+                                try {
+                                  final long start = tickStart();
+                                  strategy.doBackup(OBackupTask.this);
+                                  tickEnd(start);
+                                } catch (final IOException e) {
+                                  OLogManager.instance().error(this, "Error " + e.getMessage(), e);
+                                }
+                              });
+                    },
+                    new Date(System.currentTimeMillis() + delay),
+                    0);
+      } else {
+        OLogManager.instance()
+            .warn(
+                this,
+                "Backup failed for ["
+                    + strategy.getDbName()
+                    + "] after "
+                    + maxRetries
+                    + " retries. Manual intervention required. Backup scheduling stopped.");
+        currentRetryCount = 0;
+      }
     }
+
     return true;
   }
 
