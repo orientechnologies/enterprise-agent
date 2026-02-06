@@ -32,7 +32,6 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 import com.orientechnologies.orient.server.handler.OAutomaticBackup;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Calendar;
 import java.util.Date;
@@ -87,7 +86,6 @@ public abstract class OBackupStrategy {
           new OBackupErrorLog(
               start.getUnitId(), start.getTxId(), getUUID(), getDbName(), getMode().toString());
       final StringWriter sw = new StringWriter();
-      e.printStackTrace(new PrintWriter(sw));
       error.setMessage(e.getMessage());
       error.setStackTrace(sw.toString());
 
