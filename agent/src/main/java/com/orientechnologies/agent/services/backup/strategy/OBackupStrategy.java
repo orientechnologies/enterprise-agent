@@ -71,7 +71,7 @@ public abstract class OBackupStrategy {
   }
 
   // Backup
-  public void doBackup(final OBackupListener listener) throws IOException {
+  public void doBackup(final OBackupListener listener, int retryCount) throws IOException {
     final OBackupStartedLog start = startBackup();
     logger.log(start);
     listener.onEvent(cfg, start);
@@ -88,6 +88,9 @@ public abstract class OBackupStrategy {
       final StringWriter sw = new StringWriter();
       error.setMessage(e.getMessage());
       error.setStackTrace(sw.toString());
+
+      error.setRetryCount(retryCount);
+
       logger.log(error);
       listener.onEvent(cfg, error);
       return;
@@ -319,6 +322,15 @@ public abstract class OBackupStrategy {
 
   public Integer getRetentionDays() {
     return cfg.field(OBackupConfig.RETENTION_DAYS);
+  }
+
+  public Integer getRetries() {
+    return cfg.field(OBackupConfig.RETRIES);
+  }
+
+  public int getRetriesWithDefault() {
+    Integer retries = getRetries();
+    return (retries != null && retries >= 0) ? retries : 3;
   }
 
   protected OBackupScheduledLog lastUnfiredSchedule() {
