@@ -56,7 +56,7 @@ public class OBackupTask implements OBackupListener {
                             () -> {
                               try {
                                 final long start = tickStart();
-                                strategy.doBackup(OBackupTask.this);
+                                strategy.doBackup(OBackupTask.this, 0);
                                 tickEnd(start);
                               } catch (final IOException e) {
                                 OLogManager.instance().error(this, "Error " + e.getMessage(), e);
@@ -168,7 +168,7 @@ public class OBackupTask implements OBackupListener {
                               () -> {
                                 try {
                                   final long start = tickStart();
-                                  strategy.doBackup(OBackupTask.this);
+                                  strategy.doBackup(OBackupTask.this, currentRetryCount);
                                   tickEnd(start);
                                 } catch (final IOException e) {
                                   OLogManager.instance().error(this, "Error " + e.getMessage(), e);

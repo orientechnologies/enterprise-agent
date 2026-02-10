@@ -71,7 +71,7 @@ public abstract class OBackupStrategy {
   }
 
   // Backup
-  public void doBackup(final OBackupListener listener) throws IOException {
+  public void doBackup(final OBackupListener listener, int retryCount) throws IOException {
     final OBackupStartedLog start = startBackup();
     logger.log(start);
     listener.onEvent(cfg, start);
@@ -89,10 +89,7 @@ public abstract class OBackupStrategy {
       error.setMessage(e.getMessage());
       error.setStackTrace(sw.toString());
 
-      // Add retry count if listener is OBackupTask
-      if (listener instanceof OBackupTask) {
-        error.setRetryCount(((OBackupTask) listener).getCurrentRetryCount());
-      }
+      error.setRetryCount(retryCount);
 
       logger.log(error);
       listener.onEvent(cfg, error);
