@@ -7,7 +7,7 @@
     </parent>
     <groupId>com.orientechnologies</groupId>
     <artifactId>orientdb-enterprise-parent</artifactId>
-    <version>3.2.55-SNAPSHOT</version>
+    <version>3.2.55</version>
     <packaging>pom</packaging>
     <name>OrientDB Agent Parent</name>
     <description> OrientDB Enterprise Parent </description>
@@ -39,7 +39,7 @@
         <connection>scm:git:git@github.com:orientechnologies/enterprise-agent.git</connection>
         <developerConnection>scm:git:git@github.com:orientechnologies/enterprise-agent.git</developerConnection>
         <url>scm:git:git@github.com:orientechnologies/enterprise-agent.git</url>
-        <tag>HEAD</tag>
+        <tag>3.2.55</tag>
     </scm>
 
     <modules>
